@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CreatePlanetWizard } from "./forge/create-planet-wizard";
+import { ConnectionStatus } from "./hud/connection-status";
 import { InfoPanel } from "./hud/info-panel";
 import { Minimap } from "./hud/minimap";
 import { Toolbar } from "./hud/toolbar";
@@ -70,6 +71,8 @@ export function PlanetForge() {
 			/>
 
 			<div className="hud-layer">
+				<ConnectionStatus />
+
 				<Toolbar
 					currentSystemId={currentSystemId}
 					galaxyMode={galaxyMode}

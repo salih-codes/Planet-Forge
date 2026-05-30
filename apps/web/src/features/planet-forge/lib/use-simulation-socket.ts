@@ -8,7 +8,9 @@ const getSimPort = () => {
 	return window.__SIM_PORT__ ?? 8000;
 };
 
-const WS_URL =
+// Resolved lazily (at connect time) so a port injected by the Tauri shell after
+// this module first loads is always honoured.
+const wsUrl = () =>
 	import.meta.env.VITE_SIM_WS ?? `ws://127.0.0.1:${getSimPort()}/stream`;
 
 interface QueuedEvent {
@@ -88,7 +90,7 @@ export function useSimulationSocket() {
 			if (!alive) {
 				return;
 			}
-			const ws = new WebSocket(WS_URL);
+			const ws = new WebSocket(wsUrl());
 			wsRef.current = ws;
 
 			ws.onopen = () => {

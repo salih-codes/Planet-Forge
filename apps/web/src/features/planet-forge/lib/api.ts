@@ -11,11 +11,13 @@ const getSimPort = () => {
 	return window.__SIM_PORT__ ?? 8000;
 };
 
-const API_BASE =
+// Resolved lazily (per request) so a port injected by the Tauri shell after this
+// module first loads is always honoured, rather than captured once at import time.
+const simBase = () =>
 	import.meta.env.VITE_SIM_HTTP ?? `http://127.0.0.1:${getSimPort()}`;
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-	const res = await fetch(`${API_BASE}${path}`, {
+	const res = await fetch(`${simBase()}${path}`, {
 		headers: { "Content-Type": "application/json" },
 		...init,
 	});
