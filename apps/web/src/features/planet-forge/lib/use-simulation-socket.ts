@@ -1,3 +1,4 @@
+import { env } from "@planet-forge/env/web";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
@@ -10,8 +11,7 @@ const getSimPort = () => {
 
 // Resolved lazily (at connect time) so a port injected by the Tauri shell after
 // this module first loads is always honoured.
-const wsUrl = () =>
-	import.meta.env.VITE_SIM_WS ?? `ws://127.0.0.1:${getSimPort()}/stream`;
+const wsUrl = () => env.VITE_SIM_WS ?? `ws://127.0.0.1:${getSimPort()}/stream`;
 
 interface QueuedEvent {
 	event: SimEvent;

@@ -9,6 +9,20 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_shell::init())
     .setup(|app| {
+      #[cfg(target_os = "windows")]
+      {
+        let vc_runtime = std::path::Path::new("C:\\Windows\\System32\\vcruntime140.dll");
+        if !vc_runtime.exists() {
+          log::warn!("vcruntime140.dll not found in System32! Showing warning dialog.");
+          let _ = std::process::Command::new("powershell")
+            .args([
+              "-Command",
+              "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('Planet Forge requires the Microsoft Visual C++ Redistributable to run the physics simulation. We will now open the download page for you. Please install it and restart the app.', 'Prerequisite Required', 0, 48); Start-Process 'https://aka.ms/vs/17/release/vc_redist.x64.exe'"
+            ])
+            .spawn();
+        }
+      }
+
       // Logging is enabled in every build (not just debug) so packaged apps
       // still write logs to the OS log directory — essential for diagnosing
       // whether the simulation sidecar started and stayed up.

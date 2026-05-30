@@ -6,7 +6,7 @@
   "tags": ["scope:sim", "type:app"],
   "targets": {
     "serve": {
-      "command": "uv run uvicorn sim.main:app --reload --host ${SIM_HOST:-127.0.0.1} --port ${SIM_PORT:-8000}",
+      "command": "uv run uvicorn sim.main:app --reload --host 127.0.0.1 --port 8000",
       "options": { "cwd": "{projectRoot}" }
     },
     "test": {
@@ -26,7 +26,7 @@
       "options": { "cwd": "{projectRoot}" }
     },
     "bundle": {
-      "command": "bash scripts/bundle.sh",
+      "command": "node scripts/bundle.js",
       "options": { "cwd": "{projectRoot}" }
     }
   }
