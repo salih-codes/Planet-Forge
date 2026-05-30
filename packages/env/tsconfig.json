@@ -1,0 +1,6 @@
+{
+  "extends": "@planet-forge/config/tsconfig.base.json",
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
+}
