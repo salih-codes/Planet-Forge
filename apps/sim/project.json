@@ -1,0 +1,33 @@
+{
+  "name": "sim",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/sim/sim",
+  "tags": ["scope:sim", "type:app"],
+  "targets": {
+    "serve": {
+      "command": "uv run uvicorn sim.main:app --reload --host ${SIM_HOST:-127.0.0.1} --port ${SIM_PORT:-8000}",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "test": {
+      "command": "uv run pytest tests/ -v",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "lint": {
+      "command": "uv run ruff check sim/ tests/",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "lint-fix": {
+      "command": "uv run ruff check --fix sim/ tests/",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "build": {
+      "command": "uv build",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "bundle": {
+      "command": "bash scripts/bundle.sh",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

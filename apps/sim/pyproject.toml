@@ -1,0 +1,28 @@
+[project]
+name = "sim"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.3",
+    "numpy>=2.4.6",
+    "pydantic>=2.13.4",
+    "uvicorn[standard]>=0.48.0",
+    "websockets>=16.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.15",
+    "pyinstaller>=6.11.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

@@ -1,0 +1,111 @@
+name: "Publish Release"
+
+# Cuts a cross-platform desktop release. Push a version tag (e.g. `v0.1.0`) to
+# build macOS, Linux and Windows installers and publish them to a GitHub Release.
+# Can also be run manually from the Actions tab (workflow_dispatch).
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest" # Apple Silicon (arm64)
+          - platform: "ubuntu-22.04"
+          - platform: "windows-latest"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./apps/web/src-tauri -> target"
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      # Compile the Python physics engine into a self-contained executable and
+      # place it where Tauri expects the sidecar: a binary suffixed with the
+      # platform's Rust target triple (see externalBin in tauri.conf.json).
+      - name: Bundle Python simulation sidecar
+        shell: bash
+        run: |
+          cd apps/sim
+          uv sync
+          uv run pyinstaller --clean --onefile --name planet-sim sim/main.py
+
+          TRIPLE=$(rustc -Vv | grep host | cut -d' ' -f2)
+          echo "Target triple: $TRIPLE"
+          mkdir -p ../web/src-tauri/binaries
+
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            cp dist/planet-sim.exe "../web/src-tauri/binaries/planet-sim-$TRIPLE.exe"
+          else
+            cp dist/planet-sim "../web/src-tauri/binaries/planet-sim-$TRIPLE"
+          fi
+
+      - name: Install JS dependencies
+        run: bun install
+
+      # tauri-action runs the frontend build (beforeBuildCommand), compiles the
+      # Rust core, bundles the sidecar, and uploads the installers to a Release.
+      - name: Build desktop app & publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/web
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v0.0.0-build.{0}', github.run_number) }}
+          releaseName: "Planet Forge ${{ github.ref_type == 'tag' && github.ref_name || format('(build {0})', github.run_number) }}"
+          releaseBody: |
+            ## 🪐 Planet Forge — desktop build
+
+            An interactive solar-system sandbox and cataclysm simulator. A Python
+            physics engine drives the orbits, collisions and supernovae; a React +
+            Three.js frontend renders it with custom GLSL shaders. Both are packaged
+            into one native app via Tauri — **no Python or other runtime to install.**
+
+            ### Downloads
+            - **macOS** (Apple Silicon): `.dmg`
+            - **Linux**: `.AppImage`, `.deb`, `.rpm`
+            - **Windows**: `.msi` / `.exe`
+
+            ### Notes
+            These builds are **not code-signed**:
+            - **macOS** — if it won't open, right-click the app → **Open**, or run
+              `xattr -dr com.apple.quarantine "/Applications/planet-forge.app"`.
+            - **Windows** — click **More info → Run anyway** on the SmartScreen prompt.
+
+            See the [README](https://github.com/${{ github.repository }}#readme) for what's inside and how it works.
+          releaseDraft: false
+          prerelease: false

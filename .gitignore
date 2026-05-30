@@ -49,3 +49,23 @@ coverage
 .cache
 tmp
 temp
+
+# Rust / Tauri
+apps/web/src-tauri/target/
+apps/web/src-tauri/gen/
+# The Python sidecar binary is produced by `nx run sim:bundle` / CI, not committed
+apps/web/src-tauri/binaries/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+# PyInstaller artefacts (spec is regenerated from flags in scripts/bundle.sh)
+*.spec
+*.manifest
+
+# Design reference / handoff material (not part of the shipped app)
+design_handoff_planet_forge/
+

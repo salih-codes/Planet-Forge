@@ -1,0 +1,31 @@
+{
+  "name": "web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/web/src",
+  "tags": ["scope:web", "type:app"],
+  "targets": {
+    "dev": {
+      "command": "vite dev",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "build": {
+      "command": "vite build",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "check-types": {
+      "command": "tsc --noEmit",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "desktop:build": {
+      "command": "tauri build",
+      "dependsOn": ["sim:bundle", "build"],
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "desktop:dev": {
+      "command": "tauri dev",
+      "dependsOn": ["sim:serve"],
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

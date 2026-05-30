@@ -1,6 +1,10 @@
 import { createEnv } from "@t3-oss/env-core";
-import { z } from "zod";
 
 export const env = createEnv({
-  emptyStringAsUndefined: true,
+	// No client/server variables are declared yet; `runtimeEnv` is still required
+	// by @t3-oss/env-core. Populate these as the app grows.
+	client: {},
+	clientPrefix: "VITE_",
+	runtimeEnv: {},
+	emptyStringAsUndefined: true,
 });
