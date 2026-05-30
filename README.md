@@ -16,6 +16,25 @@ whole thing into one installable binary.
 
 ---
 
+## 📸 Screenshots
+
+Here is a visual tour of Planet Forge in action:
+
+### 🌌 Sector Navigator (Galaxy Overview)
+![Sector Navigator](docs/screenshots/sector_navigator.png)
+*The Sector Navigator interface showing all currently available solar systems in the quadrant. Users can monitor macro-level sector statistics (such as total mass and average habitability) and select a system to navigate to.*
+
+### 🪐 Active Solar System Sandbox
+![Solar System Sandbox](docs/screenshots/sandbox_view.png)
+*A sample solar system (Sol System) showing active orbital lines, realistic planetary shading, an orbital scanner radar in the bottom-left, and a detailed physical analysis panel on the right for the selected celestial body (Mercury).*
+
+### 🛠️ Planet Forge Wizard (Genesis Sequence)
+![Planet Forge Wizard](docs/screenshots/forge_wizard.png)
+*The interactive multi-step "Genesis Sequence" creation wizard. Users can forge new custom planets by selecting planetary archetypes (Terran, Ocean, Desert, Ice, Volcanic, Gas Giant) before customizing their physical attributes and launching them into orbit.*
+
+---
+
+
 ## ✨ Features
 
 - **Authoritative orbital physics** — symplectic (semi-implicit Euler) integration on game-scaled gravity, so orbits are stable and energy-conserving.
