@@ -12,7 +12,7 @@ import {
 	Vector3,
 } from "three";
 import { PLANET_TYPES } from "../../lib/planet-presets";
-import type { SimEvent } from "../../lib/types";
+import type { PlanetType, SimEvent } from "../../lib/types";
 
 interface DebrisParticle {
 	pos: Vector3;
@@ -166,5 +166,63 @@ export function DebrisBurst({
 				/>
 			</mesh>
 		</group>
+	);
+}
+
+export function DyingPlanet({
+	pos,
+	radius,
+	type,
+	duration = 1.5,
+	onDone,
+}: {
+	pos: [number, number, number];
+	radius: number;
+	type?: string;
+	duration?: number;
+	onDone: () => void;
+}) {
+	const meshRef = useRef<Mesh>(null);
+	const matRef = useRef<MeshBasicMaterial>(null);
+	const life = useRef(0);
+	const done = useRef(false);
+
+	// The doomed world glows with its own material as it is torn apart / consumed.
+	const color = (type && PLANET_TYPES[type as PlanetType]?.color) || "#ff5a2a";
+
+	useFrame((_, rawDt) => {
+		if (done.current) {
+			return;
+		}
+		const dt = Math.min(0.03, rawDt || 0.016);
+		life.current += dt;
+		const t = life.current / duration;
+
+		if (meshRef.current) {
+			const scale = Math.max(0, 1 - t);
+			meshRef.current.scale.setScalar(scale);
+		}
+
+		if (matRef.current) {
+			matRef.current.opacity = Math.max(0, 1 - t * 1.1);
+		}
+
+		if (life.current >= duration) {
+			done.current = true;
+			onDone();
+		}
+	});
+
+	return (
+		<mesh position={pos} ref={meshRef}>
+			<sphereGeometry args={[radius, 32, 24]} />
+			<meshBasicMaterial
+				color={color}
+				depthWrite={false}
+				ref={matRef}
+				toneMapped={false}
+				transparent
+			/>
+		</mesh>
 	);
 }

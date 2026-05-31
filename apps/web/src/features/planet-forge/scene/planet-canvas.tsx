@@ -73,11 +73,13 @@ function LocalCameraController({
 				if (isFirstFocus.current) {
 					const body = bodies.find((b) => b.id === focusedId);
 					const r = body ? body.config.radius : 3.0;
+					// Frame tight so the planet fills the view (its atmosphere shell
+					// reaches ~r*1.14); a closer, mostly head-on angle keeps it centred.
 					const desiredCamPos = new Vector3()
 						.copy(currentTarget)
-						.add(new Vector3(r * 1.5, r * 1.0, r * 2.5));
+						.add(new Vector3(r * 1.1, r * 0.7, r * 2.2));
 
-					camera.position.lerp(desiredCamPos, 0.08);
+					camera.position.lerp(desiredCamPos, 0.1);
 
 					if (camera.position.distanceTo(desiredCamPos) < r * 0.1) {
 						isFirstFocus.current = false;
@@ -113,6 +115,7 @@ export function PlanetCanvas({
 	onSelectSystem,
 	galaxyMode = false,
 	onToggleGalaxyMode,
+	formingId = null,
 }: {
 	bodies: CelestialBody[];
 	selectedId: string | null;
@@ -124,17 +127,25 @@ export function PlanetCanvas({
 	onSelectSystem: (id: string) => void;
 	galaxyMode?: boolean;
 	onToggleGalaxyMode: () => void;
+	formingId?: string | null;
 }) {
 	// biome-ignore lint/suspicious/noExplicitAny: OrbitControls typed ref
 	const controlsRef = useRef<any>(null);
 
 	const activeSystem = systems.find((sys) => sys.id === currentSystemId);
 	const starColor = activeSystem?.star.color ?? "#ffaa00";
-	const starRadius = (activeSystem?.star.radius ?? 1.0) * 1.4;
+	// A real star dwarfs its planets — render it well larger than the biggest
+	// planet (~4.5). This display radius is decoupled from the sim's physics
+	// radius; orbits are spaced (MIN_ORBIT) to stay clear of it.
+	// A real star dwarfs its planets. We don't render the literal ~109× ratio
+	// (planets would be invisible specks), but the star is the clearly-dominant
+	// body — roughly 3× the largest gas giant. Orbits (seeded in the sim) are
+	// pushed out so nothing sits inside it. Decoupled from the physics radius.
+	const starRadius = Math.max(20, (activeSystem?.star.radius ?? 1.0) * 14);
 
 	return (
 		<Canvas
-			camera={{ position: [0, 30, 82], fov: 50, near: 0.1, far: 2000 }}
+			camera={{ position: [0, 95, 270], fov: 50, near: 0.1, far: 5000 }}
 			className="fixed inset-0 z-0"
 			dpr={[1, 2]}
 			gl={{ antialias: true, powerPreference: "high-performance" }}
@@ -235,6 +246,7 @@ export function PlanetCanvas({
 					{bodies.map((b) => (
 						<Planet
 							body={b}
+							forming={b.id === formingId}
 							key={b.id}
 							onFocus={onFocus}
 							onSelect={onSelect}
@@ -256,7 +268,7 @@ export function PlanetCanvas({
 				dampingFactor={0.05}
 				enableDamping
 				enablePan={!galaxyMode}
-				maxDistance={420}
+				maxDistance={1200}
 				minDistance={2}
 				panSpeed={0.6}
 				ref={controlsRef}

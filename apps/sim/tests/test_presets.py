@@ -5,8 +5,8 @@ from sim.domain.presets import ATMO_BY_TYPE, PLANET_TYPES, derive_stats
 
 
 def test_terran_temperate_stats() -> None:
-    s = derive_stats("terran", 3.4, "temperate", rng_seed=0.5)
-    assert s["radius_km"] == 6290
+    s = derive_stats("terran", 1.5, "temperate", rng_seed=0.5)
+    assert s["radius_km"] == 6371
     assert s["mass"] == 1.0
     assert s["gravity"] == 1.0
     assert s["temp"] == 14  # base_temp + 0 climate delta + 0 rng offset
@@ -18,8 +18,8 @@ def test_terran_temperate_stats() -> None:
 
 def test_gas_giant_frozen_stats() -> None:
     s = derive_stats("gas", 5.5, "frozen", rng_seed=0.5)
-    # mass_earth = (5.5/3.4)^3 * 95
-    expected_mass = round((5.5 / 3.4) ** 3 * 95, 2)
+    # mass_earth = (5.5 / 1.5)^3 * 0.226
+    expected_mass = round((5.5 / 1.5) ** 3 * 0.226, 2)
     assert s["mass"] == expected_mass
     assert s["temp"] == -110 + (-40)  # base_temp + climate_delta, rng_seed=0.5 → offset=0
     assert s["life"] == "None"
@@ -28,8 +28,7 @@ def test_gas_giant_frozen_stats() -> None:
 
 def test_ice_world_stats() -> None:
     s = derive_stats("ice", 2.2, "frozen", rng_seed=0.5)
-    assert s["radius_km"] == 2200 * 1850 // 1000  # 2.2 * 1850 = 4070
-    assert s["radius_km"] == round(2.2 * 1850)
+    assert s["radius_km"] == round((2.2 / 1.5) * 6371)
     assert s["temp"] == -58 + (-40)  # -98°C
     assert s["life"] == "Dormant"
 

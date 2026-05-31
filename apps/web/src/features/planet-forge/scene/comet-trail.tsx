@@ -4,16 +4,49 @@ import {
 	AdditiveBlending,
 	BufferAttribute,
 	BufferGeometry,
+	CanvasTexture,
 	Color,
 	type Points,
+	type Texture,
 	Vector3,
 } from "three";
 import { useSimStore } from "../lib/use-simulation-socket";
+
+// Beyond this distance from the star a comet shows no tail (no sublimation).
+const ACTIVE_DIST = 140;
 
 // Tail particles shift colour as they age and drift down the tail.
 const ION_END = new Color("#1a3aff"); // cyan → deep electric blue
 const DUST_END = new Color("#ff5a2a"); // warm gold → burnt orange
 const scratchColor = new Color();
+
+// A soft radial sprite so particles render as feathered dots, not hard squares.
+// White→black falloff works with additive blending (edges multiply to nothing).
+function makeSparkTexture(): Texture {
+	const size = 64;
+	const canvas = document.createElement("canvas");
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext("2d");
+	if (ctx) {
+		const g = ctx.createRadialGradient(
+			size / 2,
+			size / 2,
+			0,
+			size / 2,
+			size / 2,
+			size / 2
+		);
+		g.addColorStop(0, "rgba(255,255,255,1)");
+		g.addColorStop(0.5, "rgba(160,160,160,1)");
+		g.addColorStop(1, "rgba(0,0,0,1)");
+		ctx.fillStyle = g;
+		ctx.fillRect(0, 0, size, size);
+	}
+	return new CanvasTexture(canvas);
+}
+
+const SPARK_TEXTURE = makeSparkTexture();
 
 interface CometTrailProps {
 	cometId: string;
@@ -78,12 +111,12 @@ export function CometTrail({ cometId, nucleusRadius }: CometTrailProps) {
 		}
 		lastCometPos.current = currentPos.clone();
 
-		// Solar proximity scaling (tails shine intensely closer to Sun)
+		// Solar proximity scaling — a comet only grows a coma/tail when solar heat
+		// sublimates its ices, i.e. when it is close to the star. Far out it is a
+		// bare nucleus with no trail at all.
 		const distToSun = currentPos.distanceTo(sunPos);
-		const intensity = Math.min(2.8, 40.0 / (distToSun * distToSun + 0.1));
-
-		// Always emit a faint wisp; tails flare up dramatically near the Sun.
-		const spawnCount = Math.max(2, Math.floor(intensity * 7));
+		const intensity = Math.min(3.0, 3500.0 / (distToSun * distToSun + 0.1));
+		const spawnCount = distToSun < ACTIVE_DIST ? Math.floor(intensity * 7) : 0;
 
 		// Spawn new particles
 		for (let k = 0; k < spawnCount; k++) {
@@ -220,6 +253,7 @@ export function CometTrail({ cometId, nucleusRadius }: CometTrailProps) {
 			<pointsMaterial
 				blending={AdditiveBlending}
 				depthWrite={false}
+				map={SPARK_TEXTURE}
 				size={1.0}
 				sizeAttenuation
 				transparent

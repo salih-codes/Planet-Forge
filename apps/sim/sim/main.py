@@ -46,8 +46,11 @@ def _planet(
     rings: bool,
     climate: str,
     name: str,
+    moons: int = 0,
+    orbit_radius: float | None = None,
+    tilt: float = 0.0,
 ) -> dict:
-    return {
+    res = {
         "type": type_,
         "radius": radius,
         "atmosphere": atmosphere,
@@ -55,7 +58,12 @@ def _planet(
         "rings": rings,
         "climate": climate,
         "name": name,
+        "moons": moons,
+        "tilt": tilt,
     }
+    if orbit_radius is not None:
+        res["orbit_radius"] = orbit_radius
+    return res
 
 
 def _comet(
@@ -96,53 +104,58 @@ def _seed_system(star: Star, planets: list[dict], comets: list[dict]) -> SolarSy
 def _seed_galaxy() -> Galaxy:
     galaxy = Galaxy()
 
-    # 1. Sol System
+    # 1. Sol System. Radii are Earth-relative (Earth = 1.5 units). Orbits use a
+    # √(AU) compression: true distances (Neptune at 30× Earth) would put the outer
+    # planets kilometres off-screen, so we preserve the *ordering and ratios* while
+    # keeping the system flyable. Earth now sits well clear of the (dominant) Sun.
+    # Axial tilts are the real values, in radians (Earth 23°, Uranus 98°, …).
     sys_sol = _seed_system(
         Star(
             body_id="sol", name="Sol", mass=1.989e30,
-            radius=1.0, luminosity=1.0, color="#ffaa00",
+            radius=3.0, luminosity=1.0, color="#ffaa00",
         ),
         [
-            _planet("desert", 1.0, 0.0, False, False, "scorched", "Mercury"),
-            _planet("lava", 2.2, 1.4, True, False, "scorched", "Venus"),
-            _planet("terran", 2.4, 1.0, True, False, "temperate", "Earth"),
-            _planet("desert", 1.4, 0.4, False, False, "frozen", "Mars"),
-            _planet("gas", 4.5, 1.3, True, True, "frozen", "Jupiter"),
-            _planet("gas", 3.8, 1.2, True, True, "frozen", "Saturn"),
-            _planet("ice", 2.8, 1.1, True, True, "frozen", "Uranus"),
-            _planet("ocean", 2.7, 1.1, True, True, "frozen", "Neptune"),
+            _planet("desert", 0.57, 0.0, False, False, "scorched", "Mercury", 0, 70.0, 0.0),
+            _planet("lava", 1.43, 1.4, True, False, "scorched", "Venus", 0, 82.0, 0.05),
+            _planet("terran", 1.50, 1.0, True, False, "temperate", "Earth", 1, 90.0, 0.41),
+            _planet("desert", 0.80, 0.4, False, False, "frozen", "Mars", 2, 103.0, 0.44),
+            _planet("gas", 16.80, 1.3, True, True, "frozen", "Jupiter", 79, 159.0, 0.05),
+            _planet("gas", 14.18, 1.2, True, True, "frozen", "Saturn", 82, 202.0, 0.47),
+            _planet("ice", 6.00, 1.1, True, True, "frozen", "Uranus", 27, 271.0, 1.71),
+            _planet("ocean", 5.82, 1.1, True, True, "frozen", "Neptune", 14, 330.0, 0.49),
         ],
-        [_comet(0.6, 0.2, 26.0, 0.7, "Halley")],
+        [_comet(0.6, 0.2, 200.0, 0.62, "Halley")],
     )
     galaxy.add_system("sol", sys_sol)
 
-    # 2. Kepler-186 System
+    # 2. Kepler-186 System (M-dwarf — really a very compact system; kept compact
+    # here too, just spaced clear of its small red star).
     sys_kepler = _seed_system(
         Star(
             body_id="kepler_star", name="Kepler-186", mass=1.074e30,
-            radius=0.52, luminosity=0.055, color="#ff3300",
+            radius=1.56, luminosity=0.055, color="#ff3300",
         ),
         [
-            _planet("desert", 1.1, 0.2, False, False, "scorched", "Kepler-186b"),
-            _planet("desert", 1.2, 0.4, False, False, "temperate", "Kepler-186c"),
-            _planet("ocean", 1.3, 0.9, True, False, "temperate", "Kepler-186d"),
-            _planet("ice", 1.2, 0.7, True, False, "frozen", "Kepler-186e"),
-            _planet("terran", 1.4, 1.0, True, False, "frozen", "Kepler-186f"),
+            _planet("desert", 1.65, 0.2, False, False, "scorched", "Kepler-186b", 0, 32.0, 0.05),
+            _planet("desert", 1.80, 0.4, False, False, "temperate", "Kepler-186c", 0, 42.0, 0.2),
+            _planet("ocean", 1.95, 0.9, True, False, "temperate", "Kepler-186d", 0, 54.0, 0.3),
+            _planet("ice", 1.80, 0.7, True, False, "frozen", "Kepler-186e", 0, 68.0, 0.15),
+            _planet("terran", 1.75, 1.0, True, False, "frozen", "Kepler-186f", 0, 84.0, 0.4),
         ],
-        [_comet(0.7, 0.3, 20.0, 0.72, "Swift-Tuttle")],
+        [_comet(0.7, 0.3, 95.0, 0.6, "Swift-Tuttle")],
     )
     galaxy.add_system("kepler", sys_kepler)
 
-    # 3. Alpha Centauri System
+    # 3. Alpha Centauri System (bright primary — orbits start outside its larger disc).
     sys_alpha = _seed_system(
         Star(
             body_id="alpha_star", name="Alpha Centauri A", mass=2.188e30,
-            radius=1.2, luminosity=1.5, color="#ffea88",
+            radius=3.6, luminosity=1.5, color="#ffea88",
         ),
         [
-            _planet("lava", 1.8, 0.8, True, False, "scorched", "Rigel-a"),
-            _planet("terran", 2.3, 1.2, True, False, "temperate", "Rigel-b"),
-            _planet("gas", 4.2, 1.4, True, True, "frozen", "Rigel-c"),
+            _planet("lava", 2.70, 0.8, True, False, "scorched", "Rigel-a", 0, 64.0, 0.1),
+            _planet("terran", 3.45, 1.2, True, False, "temperate", "Rigel-b", 1, 78.0, 0.38),
+            _planet("gas", 6.30, 1.4, True, True, "frozen", "Rigel-c", 4, 110.0, 0.05),
         ],
         [],
     )

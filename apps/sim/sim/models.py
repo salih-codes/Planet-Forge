@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
-
 
 PlanetType = Literal["terran", "ocean", "desert", "ice", "lava", "gas", "comet"]
 Climate = Literal["frozen", "temperate", "tropical", "scorched"]
@@ -23,11 +22,11 @@ class PlanetConfig(BaseModel):
     clouds: bool
     rings: bool
     climate: Climate
-    name: Optional[str] = None
-    moons: Optional[int] = None
-    tilt: Optional[float] = None
-    orbit_radius: Optional[float] = None  # → orbitRadius on the wire
-    eccentricity: Optional[float] = None  # → eccentricity on the wire
+    name: str | None = None
+    moons: int | None = None
+    tilt: float | None = None
+    orbit_radius: float | None = None  # → orbitRadius on the wire
+    eccentricity: float | None = None  # → eccentricity on the wire
 
 
 class PlanetStats(BaseModel):
@@ -44,6 +43,9 @@ class PlanetStats(BaseModel):
     atmo: dict[str, float]
     habitability: float
     life: str
+    magnetosphere: bool
+    radiation: str
+    temp_profile: str  # → tempProfile
 
 
 class CelestialBodyDTO(BaseModel):
@@ -69,7 +71,7 @@ class LaunchCometRequest(BaseModel):
     model_config = _camel_cfg
 
     target_id: str  # → targetId
-    speed: Optional[float] = None
+    speed: float | None = None
 
 
 class HurlRequest(BaseModel):
@@ -78,4 +80,4 @@ class HurlRequest(BaseModel):
     model_config = _camel_cfg
 
     target_id: str  # → targetId
-    speed: Optional[float] = None
+    speed: float | None = None

@@ -193,16 +193,41 @@ In Planet Forge, Tauri does three jobs:
 
 ---
 
-## 🧰 Tech stack
+## 🧰 Libraries & Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Desktop shell | Tauri 2 (Rust) |
-| Frontend | React 19, TanStack Router, React Three Fiber / Three.js, Tailwind CSS, shadcn/ui |
-| Rendering | Custom GLSL shaders, `@react-three/postprocessing` (bloom) |
-| Physics / API | Python 3.12, FastAPI, NumPy, Pydantic, Uvicorn |
-| Sidecar packaging | PyInstaller |
-| Monorepo / tooling | Bun, Nx, Biome (via Ultracite), uv, Ruff |
+Planet Forge leverages a modern, dual-language stack that combines high-performance GPU rendering and web-based UI tooling with a powerful OOP physics engine. Below are the key libraries and technologies that make this possible:
+
+### Frontend & Rendering Layer (TypeScript / WebGL)
+
+*   **[React 19](https://react.dev/)**: The foundation of the user interface, utilizing modern declarative rendering, component state, and the latest React 19 features.
+*   **[React Three Fiber (R3F)](https://r3f.docs.pmnd.rs/)**: A React wrapper for Three.js that brings 3D scenes directly into React's declarative component model, making the canvas highly reactive to state updates.
+*   **[Three.js](https://threejs.org/)**: The underlying production-grade WebGL engine used to manage our 3D pipelines, custom lighting, camera systems, and geometry meshes.
+*   **[Tailwind CSS & shadcn/ui](https://ui.shadcn.com/)**: Powers the sleek, glassmorphic desktop HUD, interactive modal wizards, telemetry debuggers, and responsive design systems.
+*   **[TanStack Router](https://tanstack.com/router/)**: Provides type-safe navigation and client-side routing between the sector navigation view and the sandbox canvases.
+*   **[TanStack Query (React Query)](https://tanstack.com/query/)**: Orchestrates remote state synchronization, server-side data fetching, and smart polling with automatic backoff.
+*   **[@react-three/postprocessing](https://github.com/pmndrs/react-postprocessing)**: Powers cinematic graphics, including screen-space bloom filters to simulate stellar glow, shockwave distortions, and color gradients.
+
+### Physics, API & Simulation Core (Python)
+
+*   **[FastAPI](https://fastapi.tiangolo.com/)**: A robust, modern web framework used to expose high-performance REST APIs and real-time WebSocket streams, broadcasting telemetry data at a stable 30 Hz.
+*   **[NumPy](https://numpy.org/)**: A high-performance scientific computing library that drives all physical coordinate vector operations and n-body integration calculations using C-accelerated array structures.
+*   **[Pydantic](https://docs.pydantic.dev/)**: Handles data parsing, validation, and JSON serialization DTOs, ensuring tight schema parity between the Python core and TypeScript client.
+*   **[Uvicorn](https://www.uvicorn.org/)**: A high-performance ASGI server that hosts the FastAPI application with low-overhead execution.
+
+### Desktop Shell & Tooling
+
+*   **[Tauri 2 (Rust)](https://tauri.app/)**: The application wrapper that opens native OS windows and spawns, monitors, and stops the Python sidecar process dynamically.
+*   **[PyInstaller](https://pyinstaller.org/)**: Compiles the entire Python environment, interpreter, and libraries into a single, optimized platform-specific standalone binary executable.
+*   **[Ultracite (Biome)](https://github.com/biomejs/biome)**: Our zero-config quality control engine, automatically resolving formatting and enforcing linting standard compliance.
+*   **[uv](https://docs.astral.sh/uv/)**: A fast Python resolver used to build virtual environments and lock dependencies instantly.
+
+---
+
+## 🧮 Physics & Formulas
+
+The math and physics governing the Planet Forge universe are highly realistic. The simulation uses **Newtonian Gravity**, **Symplectic Euler Integration** (for long-term orbit preservation), momentum conservation algorithms for planetary merges, and Keplerian orbital speed approximations for rings and moons.
+
+👉 **Read the full [Physics & Calculations Reference](docs/formulas_documentation.md) for detailed mathematical equations and derivations.**
 
 ---
 

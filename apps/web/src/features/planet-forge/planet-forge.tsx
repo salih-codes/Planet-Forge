@@ -3,6 +3,7 @@ import { CreatePlanetWizard } from "./forge/create-planet-wizard";
 import { ConnectionStatus } from "./hud/connection-status";
 import { InfoPanel } from "./hud/info-panel";
 import { Minimap } from "./hud/minimap";
+import { TelemetryDebugger } from "./hud/telemetry-debugger";
 import { Toolbar } from "./hud/toolbar";
 import {
 	useDeletePlanet,
@@ -35,6 +36,9 @@ export function PlanetForge() {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const [wizardOpen, setWizardOpen] = useState(false);
+	const [telemetryOpen, setTelemetryOpen] = useState(false);
+	// Id of a just-forged planet, briefly flagged so it plays its formation animation.
+	const [formingId, setFormingId] = useState<string | null>(null);
 
 	const selected =
 		bodies.find((b) => b.id === (selectedId ?? bodies[0]?.id)) ?? null;
@@ -61,6 +65,7 @@ export function PlanetForge() {
 				bodies={bodies}
 				currentSystemId={currentSystemId}
 				focusedId={focusedId}
+				formingId={formingId}
 				galaxyMode={galaxyMode}
 				onFocus={setFocusedId}
 				onSelect={setSelectedId}
@@ -83,6 +88,7 @@ export function PlanetForge() {
 					onSelectSystem={handleSelectSystem}
 					onSupernova={() => supernova.mutate()}
 					onToggleGalaxyMode={() => setGalaxyMode(!galaxyMode)}
+					onToggleTelemetry={() => setTelemetryOpen(!telemetryOpen)}
 					stats={stats}
 					systems={systems}
 				/>
@@ -105,10 +111,16 @@ export function PlanetForge() {
 			</div>
 
 			<CreatePlanetWizard
+				onForged={(id) => {
+					setFormingId(id);
+					setTimeout(() => setFormingId(null), 3000);
+				}}
 				onOpenChange={setWizardOpen}
 				open={wizardOpen}
 				systemId={currentSystemId}
 			/>
+
+			<TelemetryDebugger onOpenChange={setTelemetryOpen} open={telemetryOpen} />
 		</div>
 	);
 }

@@ -15,7 +15,16 @@ import { useCreatePlanet } from "../lib/api";
 import { deriveStats } from "../lib/planet-presets";
 import type { Climate, PlanetConfig, PlanetType } from "../lib/types";
 
-const STEPS = ["Type", "Size", "Atmosphere", "Climate", "Confirm"] as const;
+const STEPS = [
+	"Type",
+	"Size",
+	"Atmosphere",
+	"Features",
+	"Climate",
+	"Confirm",
+] as const;
+
+const DEG_TO_RAD = Math.PI / 180;
 
 const TYPE_CARDS: { k: PlanetType; t: string; d: string; g: string }[] = [
 	{
@@ -110,10 +119,12 @@ export function CreatePlanetWizard({
 	open,
 	onOpenChange,
 	systemId = "sol",
+	onForged,
 }: {
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
 	systemId?: string;
+	onForged?: (id: string) => void;
 }) {
 	const [step, setStep] = useState(0);
 	const createPlanet = useCreatePlanet(systemId);
@@ -127,12 +138,20 @@ export function CreatePlanetWizard({
 			rings: false as boolean,
 			climate: "temperate" as Climate,
 			name: "",
-		} satisfies Omit<PlanetConfig, "name"> & { name: string },
+			moons: 0 as number,
+			// Axial tilt in degrees (converted to radians on submit) and orbital
+			// eccentricity (0 = circular). Both round-trip through the sim.
+			tiltDeg: 23 as number,
+			eccentricity: 0 as number,
+		},
 		onSubmit: async ({ value }) => {
-			await createPlanet.mutateAsync({
-				...value,
+			const { tiltDeg, ...rest } = value;
+			const created = await createPlanet.mutateAsync({
+				...rest,
+				tilt: tiltDeg * DEG_TO_RAD,
 				name: value.name || undefined,
-			});
+			} satisfies PlanetConfig);
+			onForged?.(created.id);
 			onOpenChange(false);
 			setStep(0);
 			form.reset();
@@ -145,7 +164,7 @@ export function CreatePlanetWizard({
 	return (
 		<Dialog onOpenChange={onOpenChange} open={open}>
 			<DialogContent
-				className="glass max-w-[760px] gap-0 overflow-hidden p-0"
+				className="glass w-[calc(100vw-2rem)] max-w-190 gap-0 overflow-hidden p-0 sm:max-w-190"
 				data-interactive
 				showCloseButton={false}
 			>
@@ -336,20 +355,103 @@ export function CreatePlanetWizard({
 									/>
 								)}
 							</form.Field>
+						</>
+					)}
+
+					{step === 3 && (
+						<>
+							<p className="mb-4 text-muted-foreground text-sm">
+								Add <b className="text-foreground">orbital companions</b> and
+								shape the world's geometry — rings, moons, axial tilt and orbit
+								shape.
+							</p>
 							<form.Field name="rings">
 								{(field) => (
 									<ToggleRow
 										checked={field.state.value}
-										desc="Translucent debris ring system"
+										desc="Icy band plus thousands of tumbling debris rocks"
 										onChange={(v) => field.handleChange(v)}
-										title="Planetary Rings"
+										title="Ring System & Debris"
 									/>
+								)}
+							</form.Field>
+							<form.Field name="moons">
+								{(field) => (
+									<div className="mb-6">
+										<FieldLabel
+											k="Moons"
+											v={`${field.state.value} ${field.state.value === 1 ? "moon" : "moons"}`}
+										/>
+										<Slider
+											max={12}
+											min={0}
+											onValueChange={(vals) =>
+												field.handleChange(
+													typeof vals === "number" ? vals : (vals[0] ?? 0)
+												)
+											}
+											step={1}
+											value={[field.state.value]}
+										/>
+										<p className="mt-2 text-[10.5px] text-muted-foreground">
+											Natural satellites, scaled well below the planet and
+											spaced out along inclined orbits (up to 4 shown in-scene).
+										</p>
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="tiltDeg">
+								{(field) => (
+									<div className="mb-6">
+										<FieldLabel k="Axial Tilt" v={`${field.state.value}°`} />
+										<Slider
+											max={90}
+											min={0}
+											onValueChange={(vals) =>
+												field.handleChange(
+													typeof vals === "number" ? vals : (vals[0] ?? 0)
+												)
+											}
+											step={1}
+											value={[field.state.value]}
+										/>
+										<p className="mt-2 text-[10.5px] text-muted-foreground">
+											Tilts the spin axis and any ring plane. Earth ≈ 23°,
+											Uranus ≈ 98°.
+										</p>
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="eccentricity">
+								{(field) => (
+									<div className="mb-6">
+										<FieldLabel
+											k="Orbit Eccentricity"
+											v={field.state.value.toFixed(2)}
+										/>
+										<Slider
+											max={0.6}
+											min={0}
+											onValueChange={(vals) =>
+												field.handleChange(
+													typeof vals === "number" ? vals : (vals[0] ?? 0)
+												)
+											}
+											step={0.02}
+											value={[field.state.value]}
+										/>
+										<p className="mt-2 text-[10.5px] text-muted-foreground">
+											0 = perfect circle. Higher values stretch the orbit into
+											an ellipse that swings closer to and farther from the
+											star.
+										</p>
+									</div>
 								)}
 							</form.Field>
 						</>
 					)}
 
-					{step === 3 && (
+					{step === 4 && (
 						<form.Field name="climate">
 							{(field) => (
 								<>
@@ -401,7 +503,7 @@ export function CreatePlanetWizard({
 						</form.Field>
 					)}
 
-					{step === 4 && (
+					{step === 5 && (
 						<form.Subscribe selector={(s) => s.values}>
 							{(v) => {
 								const card = TYPE_CARDS.find((c) => c.k === v.type);
@@ -457,6 +559,9 @@ export function CreatePlanetWizard({
 															"Clouds / Rings",
 															`${v.clouds ? "Yes" : "No"} / ${v.rings ? "Yes" : "No"}`,
 														],
+														["Moons", `${v.moons}`],
+														["Axial Tilt", `${v.tiltDeg}°`],
+														["Eccentricity", v.eccentricity.toFixed(2)],
 														[
 															"Climate",
 															CLIMATES.find((c) => c.k === v.climate)?.l ?? "",

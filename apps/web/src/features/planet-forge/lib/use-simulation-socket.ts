@@ -1,5 +1,5 @@
 import { env } from "@planet-forge/env/web";
-import { useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import type { CelestialBody, EphemeralBody, SimEvent } from "./types";
@@ -18,18 +18,29 @@ interface QueuedEvent {
 	key: number;
 }
 
+interface Impact {
+	pos: [number, number, number];
+	size: number;
+}
+
 interface SimState {
+	addImpact: (id: string, pos: [number, number, number], size: number) => void;
 	bodies: Record<string, CelestialBody>;
 	connected: boolean;
 	consumeEvents: () => QueuedEvent[];
 	ephemerals: EphemeralBody[];
 	events: QueuedEvent[];
+	lastMsg: StreamMsg | null;
+	// World-space comet impacts awaiting a planet to turn them into surface craters.
+	pendingImpacts: Record<string, Impact[]>;
 	positions: Record<string, [number, number, number]>;
 	pushEvents: (events: SimEvent[]) => void;
 	removeBody: (id: string) => void;
 	setConnected: (c: boolean) => void;
 	setEphemerals: (e: EphemeralBody[]) => void;
+	setLastMsg: (msg: StreamMsg) => void;
 	setPositions: (p: Record<string, [number, number, number]>) => void;
+	takeImpacts: (id: string) => Impact[];
 	upsertBody: (b: CelestialBody) => void;
 }
 
@@ -40,7 +51,29 @@ export const useSimStore = create<SimState>((set, get) => ({
 	bodies: {},
 	ephemerals: [],
 	events: [],
+	pendingImpacts: {},
 	connected: false,
+	lastMsg: null,
+	setLastMsg: (lastMsg) => set({ lastMsg }),
+	addImpact: (id, pos, size) =>
+		set((s) => ({
+			pendingImpacts: {
+				...s.pendingImpacts,
+				[id]: [...(s.pendingImpacts[id] ?? []), { pos, size }],
+			},
+		})),
+	takeImpacts: (id) => {
+		const list = get().pendingImpacts[id];
+		if (!list || list.length === 0) {
+			return [];
+		}
+		set((s) => {
+			const next = { ...s.pendingImpacts };
+			delete next[id];
+			return { pendingImpacts: next };
+		});
+		return list;
+	},
 	setPositions: (positions) => set({ positions }),
 	setEphemerals: (ephemerals) => set({ ephemerals }),
 	pushEvents: (incoming) => {
@@ -77,6 +110,35 @@ interface StreamMsg {
 	t: number;
 }
 
+// Route streamed events: queue them for visual effects, register comet impacts as
+// pending craters, and refetch the REST body lists when a body was destroyed/grew.
+function applyEvents(events: SimEvent[], queryClient: QueryClient): void {
+	const store = useSimStore.getState();
+	store.pushEvents(events);
+
+	let bodiesChanged = false;
+	for (const event of events) {
+		if (
+			event.type === "collision" ||
+			event.type === "impact_star" ||
+			event.type === "remnant"
+		) {
+			bodiesChanged = true;
+		} else if (event.type === "impact" && event.data.target) {
+			store.addImpact(
+				event.data.target,
+				event.pos,
+				event.data.bodies?.[0]?.radius ?? 0.6
+			);
+		}
+	}
+
+	if (bodiesChanged) {
+		queryClient.invalidateQueries({ queryKey: ["system"] });
+		queryClient.invalidateQueries({ queryKey: ["systems"] });
+	}
+}
+
 export function useSimulationSocket() {
 	const wsRef = useRef<WebSocket | null>(null);
 	const retryRef = useRef(0);
@@ -110,10 +172,11 @@ export function useSimulationSocket() {
 					next[b.id] = b.p;
 				}
 				const store = useSimStore.getState();
+				store.setLastMsg(msg);
 				store.setPositions(next);
 				store.setEphemerals(msg.ephemerals ?? []);
 				if (msg.events && msg.events.length > 0) {
-					store.pushEvents(msg.events);
+					applyEvents(msg.events, queryClient);
 				}
 			};
 

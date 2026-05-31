@@ -62,7 +62,7 @@ export const SURFACE_VERT =
 export const SURFACE_FRAG =
 	NOISE_GLSL +
 	/* glsl */ `
-  uniform float uTime,uFreq,uWater,uIce,uBanded,uEmissive,uClouds;
+  uniform float uTime,uFreq,uWater,uIce,uBanded,uEmissive,uClouds,uForm;
   uniform vec3 uSunDir,uOcean,uLand1,uLand2,uSeed;
   varying vec3 vNormalW; varying vec3 vPosM; varying vec3 vViewDir;
   void main(){
@@ -191,6 +191,16 @@ export const SURFACE_FRAG =
     
     lit+=col*uEmissive*(1.0-diff*0.6);
     lit+=vec3(1.0,0.55,0.25)*term*(1.0-uBanded);
+
+    // Forge formation: the freshly-built world cools from molten heat into its
+    // final surface as uForm rises 0 -> 1.
+    if(uForm < 0.999){
+      vec3 molten = vec3(1.0, 0.45, 0.12);
+      float reveal = smoothstep(0.15, 0.95, uForm);
+      lit = mix(molten * 1.4, lit, reveal);
+      lit += molten * (1.0 - uForm) * 0.8;
+    }
+
     gl_FragColor=vec4(lit,1.0);
   }
 `;

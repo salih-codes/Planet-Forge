@@ -6,6 +6,7 @@ import {
 	TooltipTrigger,
 } from "@planet-forge/ui/components/tooltip";
 import {
+	Activity,
 	Camera,
 	FolderOpen,
 	Map as MapIcon,
@@ -57,6 +58,7 @@ export function Toolbar({
 	onSelectSystem,
 	galaxyMode = false,
 	onToggleGalaxyMode,
+	onToggleTelemetry,
 }: {
 	stats: SystemStats;
 	onCreate: () => void;
@@ -69,6 +71,7 @@ export function Toolbar({
 	onSelectSystem: (id: string) => void;
 	galaxyMode?: boolean;
 	onToggleGalaxyMode: () => void;
+	onToggleTelemetry: () => void;
 }) {
 	// Calculate consolidated galaxy stats if in galaxy mode
 	const galaxyStats = {
@@ -160,6 +163,14 @@ export function Toolbar({
 					variant="outline"
 				>
 					<Zap className="size-4" /> SUPERNOVA
+				</Button>
+
+				<Button
+					className="gap-2 border-primary/50 font-mono text-primary tracking-[0.12em] hover:bg-primary/15"
+					onClick={onToggleTelemetry}
+					variant="outline"
+				>
+					<Activity className="size-4" /> TELEMETRY
 				</Button>
 
 				{[

@@ -58,7 +58,7 @@ class Star(CelestialBody):
 
     def derive_stats(self) -> dict:
         return {
-            "radius_km": int(self.radius * 109_000),
+            "radius_km": int((self.radius / 3.0) * 696340),
             "mass": round(self.mass / 1.989e30, 2),
             "gravity": 274.0,
             "temp": 5778,

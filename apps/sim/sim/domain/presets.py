@@ -153,15 +153,16 @@ def derive_stats(
     radius: float,
     climate: str = "temperate",
     rng_seed: float = 0.5,
+    moons: int = 0,
 ) -> dict:
     """
     Client-side stat preview — mirrors deriveStats() in planet-presets.ts exactly.
     rng_seed replaces Math.random(); pass 0.5 for deterministic output.
     """
     t = PLANET_TYPES[planet_type]
-    radius_km = round(radius * 1850)
-    mass = round((radius / 3.4) ** 3 * (95 if planet_type == "gas" else 1), 2)
-    gravity = round(mass / (radius / 3.4) ** 2, 2)
+    radius_km = round((radius / 1.5) * 6371)
+    mass = round((radius / 1.5) ** 3 * (0.226 if planet_type == "gas" else 1.0), 2)
+    gravity = round(mass / (radius / 1.5) ** 2, 2)
     temp = int(t["base_temp"] + round((rng_seed - 0.5) * 12) + CLIMATE_DELTA[climate])
     hb, hv = BASE_HABITABILITY[planet_type]
     habitability = min(99, hb + int(rng_seed * hv))
@@ -173,7 +174,7 @@ def derive_stats(
         "gravity": gravity,
         "temp": temp,
         "day": day,
-        "moons": 0,
+        "moons": moons,
         "atmo": dict(ATMO_BY_TYPE[planet_type]),
         "habitability": habitability,
         "life": t["life"],

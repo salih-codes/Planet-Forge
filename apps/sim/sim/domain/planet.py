@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from .base import CelestialBody
-from .presets import CLIMATE_DELTA, PLANET_TYPES, ATMO_BY_TYPE, BASE_HABITABILITY
+from .presets import ATMO_BY_TYPE, BASE_HABITABILITY, CLIMATE_DELTA, PLANET_TYPES
+
+# Orbit (semi-major axis) below which a close-in planet is treated as tidally
+# locked — one hemisphere permanently faces its star.
+TIDAL_LOCK_ORBIT = 14.0
 
 
 class Planet(CelestialBody):
@@ -61,12 +65,14 @@ class Planet(CelestialBody):
     def derive_stats(self) -> dict:
         t = self._meta
         r = self.scene_radius
-        radius_km = round(r * 1850)
-        mass_earth = round((r / 3.4) ** 3 * (95 if self.planet_type == "gas" else 1), 2)
-        gravity = round(mass_earth / (r / 3.4) ** 2, 2)
+        radius_km = round((r / 1.5) * 6371)
+        mass_earth = round((r / 1.5) ** 3 * (0.226 if self.planet_type == "gas" else 1.0), 2)
+        gravity = round(mass_earth / (r / 1.5) ** 2, 2)
         temp = int(t["base_temp"] + CLIMATE_DELTA[self.climate])
         hb, hv = BASE_HABITABILITY[self.planet_type]
         habitability = min(99, hb + hv // 2)
+
+        magnetosphere = self._has_magnetosphere()
 
         return {
             "radius_km": radius_km,
@@ -78,7 +84,49 @@ class Planet(CelestialBody):
             "atmo": dict(ATMO_BY_TYPE[self.planet_type]),
             "habitability": habitability,
             "life": t["life"],
+            "magnetosphere": magnetosphere,
+            "radiation": self._radiation_level(magnetosphere),
+            "temp_profile": self._temp_profile(temp),
         }
+
+    def _has_magnetosphere(self) -> bool:
+        """A molten-core dynamo: gas giants always; sizeable rocky worlds too."""
+        if self.planet_type == "gas":
+            return True
+        if self.planet_type in ("terran", "ocean") and self.scene_radius >= 2.0:
+            return True
+        return False
+
+    def _radiation_level(self, has_field: bool) -> str:
+        """Cosmic/stellar radiation exposure, mitigated by a field + atmosphere."""
+        score = 0
+        if not has_field:
+            score += 2
+        if self.atmosphere < 0.5:
+            score += 1
+        if self.climate == "scorched":
+            score += 1
+        if self.planet_type in ("lava", "comet"):
+            score += 1
+        if score <= 1:
+            return "Low"
+        if score == 2:
+            return "Moderate"
+        if score == 3:
+            return "High"
+        return "Extreme"
+
+    def _temp_profile(self, temp: int) -> str:
+        """How heat is distributed across the surface."""
+        if self.planet_type == "comet":
+            return "Frozen nucleus; sublimates near stars"
+        if self.orbit_radius < TIDAL_LOCK_ORBIT:
+            return "Tidally locked — scorched dayside, frozen nightside"
+        if temp > 60:
+            return "Hot across the entire surface"
+        if temp < -30:
+            return "Frozen across the entire surface"
+        return "Even, temperate distribution"
 
     def to_config(self) -> dict:
         return {

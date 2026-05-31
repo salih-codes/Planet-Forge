@@ -108,17 +108,22 @@ function StatCell({
 	k,
 	v,
 	unit,
+	valueColor,
 }: {
 	k: string;
 	v: string | number;
 	unit?: string;
+	valueColor?: string;
 }) {
 	return (
 		<div className="rounded-md border bg-secondary/40 px-3 py-2">
 			<div className="text-[9.5px] text-muted-foreground uppercase tracking-[0.18em]">
 				{k}
 			</div>
-			<div className="mt-1 font-mono text-base text-foreground">
+			<div
+				className="mt-1 font-mono text-base text-foreground"
+				style={valueColor ? { color: valueColor } : undefined}
+			>
 				{v}
 				{unit && (
 					<span className="ml-0.5 text-[10px] text-muted-foreground">
@@ -129,6 +134,13 @@ function StatCell({
 		</div>
 	);
 }
+
+const RADIATION_COLORS: Record<string, string> = {
+	Low: "var(--primary)",
+	Moderate: "#ffb04a",
+	High: "#ff8a4a",
+	Extreme: "#ff5a5a",
+};
 
 export function InfoPanel({
 	body,
@@ -206,6 +218,25 @@ export function InfoPanel({
 					<StatCell k="Surface Temp" unit="°C" v={s.temp} />
 					<StatCell k="Day Length" unit="h" v={s.day} />
 					<StatCell k="Moons" v={String(s.moons).padStart(2, "0")} />
+					<StatCell
+						k="Radiation"
+						v={s.radiation}
+						valueColor={RADIATION_COLORS[s.radiation]}
+					/>
+					<StatCell
+						k="Magnetic Field"
+						v={s.magnetosphere ? "Protected" : "None"}
+						valueColor={s.magnetosphere ? "var(--primary)" : "#ff8a4a"}
+					/>
+				</div>
+
+				<div className="mt-2.5 rounded-md border bg-secondary/40 px-3 py-2">
+					<div className="text-[9.5px] text-muted-foreground uppercase tracking-[0.18em]">
+						Thermal Profile
+					</div>
+					<div className="mt-1 text-foreground text-xs leading-relaxed">
+						{s.tempProfile}
+					</div>
 				</div>
 
 				<div className="mt-4 mb-2.5 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-[0.28em]">

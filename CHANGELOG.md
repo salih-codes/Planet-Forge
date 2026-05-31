@@ -7,6 +7,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The release workflow publishes the section matching the pushed tag (e.g. `v0.1.3`
 → the `## [0.1.3]` block) as the GitHub Release notes.
 
+## [0.1.4] - 2026-05-31
+
+### Added
+- Realistic planetary and solar sizing with physically proportional radii and
+  orbit distances.
+- Elliptical orbit support with eccentricity-driven trajectories for planets and
+  comets.
+- Planetary moons that orbit their parent bodies in the 3D scene.
+- Aligned rings and debris angles matching each planet's axial tilt.
+- Custom collision absorption and destruction animations: larger bodies absorb
+  smaller ones (gaining volume and conserving momentum), while comparably sized
+  bodies shatter with debris dispersal effects.
+
+### Fixed
+- **Type errors in collision system.** Added explicit `dict[str, Any]` type
+  annotation (with `Any` imported from `typing`) to the heterogeneous `event_data` dict in
+  `_resolve_collision()`, fully resolving Pyright/Pylance inference errors on dynamically
+  assigned keys (`outcome`, `absorber`, `absorbed`, `destroyed`).
+
+---
+
 ## [0.1.3] - 2026-05-31
 
 ### Fixed

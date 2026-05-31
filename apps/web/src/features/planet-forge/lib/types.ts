@@ -17,16 +17,20 @@ export interface PlanetStats {
 	gravity: number;
 	habitability: number;
 	life: string;
+	magnetosphere: boolean;
 	mass: number;
 	moons: number;
+	radiation: string;
 	radiusKm: number;
 	temp: number;
+	tempProfile: string;
 }
 
 export interface PlanetConfig {
 	atmosphere: number;
 	climate: Climate;
 	clouds: boolean;
+	eccentricity?: number;
 	moons?: number;
 	name?: string;
 	orbitRadius?: number;
@@ -70,6 +74,7 @@ export interface SystemInfo {
 
 export type SimEventType =
 	| "collision"
+	| "impact"
 	| "impact_star"
 	| "supernova"
 	| "remnant";
@@ -88,6 +93,7 @@ export interface SimEvent {
 		energy?: number;
 		radius?: number;
 		shockSpeed?: number;
+		target?: string;
 	};
 	pos: [number, number, number];
 	type: SimEventType;

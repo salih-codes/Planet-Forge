@@ -146,16 +146,50 @@ export function deriveStats(
 	type: PlanetType,
 	radius: number,
 	climate: Climate = "temperate",
-	rng: () => number = Math.random
+	rng: () => number = Math.random,
+	moons = 0
 ): PlanetStats {
 	const t = PLANET_TYPES[type];
-	const radiusKm = Math.round(radius * 1850);
-	const mass = +((radius / 3.4) ** 3 * (type === "gas" ? 95 : 1)).toFixed(2);
-	const gravity = +(mass / (radius / 3.4) ** 2).toFixed(2);
+	const radiusKm = Math.round((radius / 1.5) * 6371);
+	const mass = +((radius / 1.5) ** 3 * (type === "gas" ? 0.226 : 1.0)).toFixed(
+		2
+	);
+	const gravity = +(mass / (radius / 1.5) ** 2).toFixed(2);
 	const temp =
 		t.baseTemp + Math.round((rng() - 0.5) * 12) + CLIMATE_DELTA[climate];
 	const [hb, hv] = BASE_HABITABILITY[type];
 	const habitability = Math.min(99, hb + Math.floor(rng() * hv));
+
+	// Mirrors the authoritative Python derive_stats(); orbit/atmosphere aren't
+	// known in the wizard preview, so tidal-lock and the thin-atmosphere term are
+	// approximated. The HUD always displays the backend's authoritative values.
+	const magnetosphere =
+		type === "gas" ||
+		((type === "terran" || type === "ocean") && radius >= 1.0);
+	let radiationScore = magnetosphere ? 0 : 2;
+	if (climate === "scorched") {
+		radiationScore += 1;
+	}
+	if (type === "lava" || type === "comet") {
+		radiationScore += 1;
+	}
+	let radiation = "Low";
+	if (radiationScore >= 4) {
+		radiation = "Extreme";
+	} else if (radiationScore === 3) {
+		radiation = "High";
+	} else if (radiationScore === 2) {
+		radiation = "Moderate";
+	}
+
+	let tempProfile = "Even, temperate distribution";
+	if (type === "comet") {
+		tempProfile = "Frozen nucleus; sublimates near stars";
+	} else if (temp > 60) {
+		tempProfile = "Hot across the entire surface";
+	} else if (temp < -30) {
+		tempProfile = "Frozen across the entire surface";
+	}
 
 	return {
 		radiusKm,
@@ -163,10 +197,13 @@ export function deriveStats(
 		gravity,
 		temp,
 		day: +(8 + rng() * 30).toFixed(1),
-		moons: 0,
+		moons,
 		atmo: { ...ATMO_BY_TYPE[type] },
 		habitability,
 		life: t.life,
+		magnetosphere,
+		radiation,
+		tempProfile,
 	};
 }
 
