@@ -74,8 +74,43 @@ jobs:
             cp dist/planet-sim "../web/src-tauri/binaries/planet-sim-$TRIPLE"
           fi
 
+          # Ad-hoc code-sign the sidecar on macOS. Without a valid signature on a
+          # nested binary, the whole .app fails Gatekeeper's check and reports
+          # "is damaged" on Apple Silicon once it's been quarantined (downloaded).
+          if [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            codesign --force --sign - "../web/src-tauri/binaries/planet-sim-$TRIPLE"
+          fi
+
       - name: Install JS dependencies
         run: bun install
+
+      # Build the GitHub Release body: the matching CHANGELOG.md section for this
+      # tag, followed by per-OS install notes. Runs on every matrix job but only
+      # the one that first creates the release applies its body.
+      - name: Prepare release notes
+        id: notes
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SECTION=""
+          if [ -f CHANGELOG.md ]; then
+            SECTION=$(awk -v v="$VERSION" '
+              index($0, "## [" v "]") == 1 { flag=1; next }
+              /^## \[/ { flag=0 }
+              flag { print }
+            ' CHANGELOG.md)
+          fi
+          {
+            echo "body<<__NOTES_EOF__"
+            if [ -n "$SECTION" ]; then
+              printf '%s\n\n' "$SECTION"
+            fi
+            echo '### Install notes'
+            echo '- **macOS** (ad-hoc signed, not notarized): right-click the app → **Open**, then **Open** again — or System Settings → Privacy & Security → **Open Anyway**. If macOS still blocks it, run `xattr -dr com.apple.quarantine "/Applications/Planet Forge.app"`.'
+            echo '- **Windows**: on the SmartScreen prompt click **More info → Run anyway**.'
+            echo '- **Linux**: `.AppImage` (`chmod +x` then run), `.deb`, or `.rpm`.'
+            echo "__NOTES_EOF__"
+          } >> "$GITHUB_OUTPUT"
 
       # tauri-action runs the frontend build (beforeBuildCommand), compiles the
       # Rust core, bundles the sidecar, and uploads the installers to a Release.
@@ -87,25 +122,6 @@ jobs:
           projectPath: apps/web
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v0.0.0-build.{0}', github.run_number) }}
           releaseName: "Planet Forge ${{ github.ref_type == 'tag' && github.ref_name || format('(build {0})', github.run_number) }}"
-          releaseBody: |
-            ## 🪐 Planet Forge — desktop build
-
-            An interactive solar-system sandbox and cataclysm simulator. A Python
-            physics engine drives the orbits, collisions and supernovae; a React +
-            Three.js frontend renders it with custom GLSL shaders. Both are packaged
-            into one native app via Tauri — **no Python or other runtime to install.**
-
-            ### Downloads
-            - **macOS** (Apple Silicon): `.dmg`
-            - **Linux**: `.AppImage`, `.deb`, `.rpm`
-            - **Windows**: `.msi` / `.exe`
-
-            ### Notes
-            These builds are **not code-signed**:
-            - **macOS** — if it won't open, right-click the app → **Open**, or run
-              `xattr -dr com.apple.quarantine "/Applications/planet-forge.app"`.
-            - **Windows** — click **More info → Run anyway** on the SmartScreen prompt.
-
-            See the [README](https://github.com/${{ github.repository }}#readme) for what's inside and how it works.
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false

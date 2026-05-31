@@ -290,18 +290,25 @@ macOS, Ubuntu, and Windows. For each platform it:
 
 ### Cutting a release
 
-Tag a commit and push the tag:
+1. Add a section for the new version to [CHANGELOG.md](CHANGELOG.md) (the workflow
+   publishes the matching `## [x.y.z]` block as the release notes).
+2. Bump the version in [`apps/web/src-tauri/tauri.conf.json`](apps/web/src-tauri/tauri.conf.json)
+   and [`apps/web/src-tauri/Cargo.toml`](apps/web/src-tauri/Cargo.toml) to match.
+3. Commit, then tag and push:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The workflow builds all three platforms and attaches their installers to a release named
 after the tag (it can also be run manually from the **Actions** tab via *workflow_dispatch*).
 
-> **Note:** these builds are **not code-signed**. macOS users may need to right-click →
-> *Open* (or clear the quarantine flag), and Windows users may see a SmartScreen prompt.
+> **Code signing:** these builds are **ad-hoc signed, not notarized** (no paid Apple
+> Developer ID). On macOS, open it the first time with **right-click → Open** (or System
+> Settings → Privacy & Security → **Open Anyway**); if it was already quarantined run
+> `xattr -dr com.apple.quarantine "/Applications/Planet Forge.app"`. On Windows, click
+> **More info → Run anyway** on the SmartScreen prompt.
 
 ---
 
