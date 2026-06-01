@@ -11,6 +11,7 @@ import { Switch } from "@planet-forge/ui/components/switch";
 import { useForm } from "@tanstack/react-form";
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { ControllerButtonHint } from "../hud/controller-button-hint";
 import { useCreatePlanet } from "../lib/api";
 import { deriveStats } from "../lib/planet-presets";
 import type { Climate, PlanetConfig, PlanetType } from "../lib/types";
@@ -590,9 +591,19 @@ export function CreatePlanetWizard({
 				</div>
 
 				<div className="flex items-center justify-between border-t px-6 py-4">
-					<Button disabled={step === 0} onClick={prev} variant="ghost">
-						← Back
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button disabled={step === 0} onClick={prev} variant="ghost">
+							← Back
+						</Button>
+						<button
+							className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider transition-colors hover:text-foreground"
+							onClick={() => onOpenChange(false)}
+							type="button"
+						>
+							Cancel [ ESC ]
+						</button>
+						<ControllerButtonHint action="cancel" className="scale-100" />
+					</div>
 					<div className="whitespace-nowrap text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 						Step {step + 1} / {STEPS.length}
 					</div>

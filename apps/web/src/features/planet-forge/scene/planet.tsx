@@ -39,12 +39,14 @@ export function Planet({
 	selected,
 	onSelect,
 	onFocus,
+	onViewDetails,
 	forming = false,
 }: {
 	body: CelestialBody;
 	selected: boolean;
 	onSelect: (id: string) => void;
 	onFocus: (id: string) => void;
+	onViewDetails: (id: string) => void;
 	forming?: boolean;
 }) {
 	const meta = PLANET_TYPES[body.type];
@@ -227,7 +229,7 @@ export function Planet({
 			e.stopPropagation();
 			onSelect(body.id);
 			clearPress();
-			pressTimer.current = setTimeout(() => onFocus(body.id), 450);
+			pressTimer.current = setTimeout(() => onViewDetails(body.id), 450);
 		},
 		onPointerUp: clearPress,
 		onPointerLeave: clearPress,

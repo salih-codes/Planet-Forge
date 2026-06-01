@@ -74,10 +74,11 @@ export interface SystemInfo {
 
 export type SimEventType =
 	| "collision"
+	| "disintegrate"
 	| "impact"
 	| "impact_star"
-	| "supernova"
-	| "remnant";
+	| "remnant"
+	| "supernova";
 
 export interface SimEventBodyRef {
 	radius: number;

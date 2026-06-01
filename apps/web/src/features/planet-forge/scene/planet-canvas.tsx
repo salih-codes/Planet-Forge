@@ -4,8 +4,10 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useEffect, useRef } from "react";
 import { AdditiveBlending, DoubleSide, Vector3 } from "three";
 import type { CelestialBody, SystemInfo } from "../lib/types";
+import { useGamepadStore } from "../lib/use-gamepad";
 import { useSimStore } from "../lib/use-simulation-socket";
 import { AmbientComets } from "./ambient-comets";
+import { ControllerCameraController } from "./controller-camera-controller";
 import { EffectsManager } from "./effects/effects-manager";
 import { CentralStar, Nebula, Starfield, Sun } from "./environment";
 import { Planet } from "./planet";
@@ -49,18 +51,56 @@ function LocalCameraController({
 	focusedId,
 	bodies,
 	controlsRef,
+	resetCameraTrigger,
 }: {
 	focusedId: string | null;
 	bodies: CelestialBody[];
 	// biome-ignore lint/suspicious/noExplicitAny: ref is OrbitControls typed
 	controlsRef: any;
+	resetCameraTrigger: number;
 }) {
 	const { camera } = useThree();
 	const isFirstFocus = useRef(true);
+	const isResetting = useRef(false);
+	const isZoomingOut = useRef(false);
+	const zoomOutTrigger = useGamepadStore((s) => s.zoomOutTrigger);
+
+	// Register "start" drag event listener to interrupt resetting/zooming immediately
+	useEffect(() => {
+		const controls = controlsRef.current;
+		if (!controls) {
+			return;
+		}
+
+		const handleStart = () => {
+			isResetting.current = false;
+			isZoomingOut.current = false;
+		};
+
+		controls.addEventListener("start", handleStart);
+		return () => {
+			controls.removeEventListener("start", handleStart);
+		};
+	}, [controlsRef]);
+
+	// Watch zoomOutTrigger to initiate sweeping overview pull-back
+	useEffect(() => {
+		if (zoomOutTrigger > 0 && focusedId === null) {
+			isZoomingOut.current = true;
+			isResetting.current = false;
+		}
+	}, [zoomOutTrigger, focusedId]);
 
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: camera tracking step is unified in local system view
 	useFrame(() => {
 		if (!controlsRef.current) {
+			return;
+		}
+
+		// Yield to ControllerCameraController while the user is panning with sticks
+		if (useGamepadStore.getState().controllerPanning) {
+			isResetting.current = false;
+			isZoomingOut.current = false;
 			return;
 		}
 
@@ -89,17 +129,46 @@ function LocalCameraController({
 				}
 				controlsRef.current.update();
 			}
-		} else {
+		} else if (isZoomingOut.current) {
+			// Sweeping pulling back effect from the current viewing angle
+			const desiredPos = new Vector3()
+				.copy(camera.position)
+				.sub(controlsRef.current.target)
+				.normalize()
+				.multiplyScalar(220) // Reasonable pullback distance for system overview
+				.add(controlsRef.current.target);
+
+			camera.position.lerp(desiredPos, 0.08);
+			controlsRef.current.update();
+
+			if (camera.position.distanceTo(desiredPos) < 2.0) {
+				isZoomingOut.current = false;
+			}
+		} else if (isResetting.current) {
 			const origin = new Vector3(0, 0, 0);
 			controlsRef.current.target.lerp(origin, 0.08);
 			controlsRef.current.update();
+
+			if (controlsRef.current.target.distanceTo(origin) < 0.1) {
+				isResetting.current = false;
+			}
 		}
 	});
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset camera focus state when selected planet changes
 	useEffect(() => {
 		isFirstFocus.current = true;
+		if (focusedId !== null) {
+			isResetting.current = false;
+			isZoomingOut.current = false;
+		}
 	}, [focusedId]);
+
+	useEffect(() => {
+		if (resetCameraTrigger > 0) {
+			isResetting.current = true;
+			isZoomingOut.current = false;
+		}
+	}, [resetCameraTrigger]);
 
 	return null;
 }
@@ -110,24 +179,28 @@ export function PlanetCanvas({
 	onSelect,
 	focusedId,
 	onFocus,
+	onViewDetails,
 	systems = [],
 	currentSystemId = "sol",
 	onSelectSystem,
 	galaxyMode = false,
 	onToggleGalaxyMode,
 	formingId = null,
+	resetCameraTrigger = 0,
 }: {
 	bodies: CelestialBody[];
 	selectedId: string | null;
 	onSelect: (id: string) => void;
 	focusedId: string | null;
 	onFocus: (id: string | null) => void;
+	onViewDetails: (id: string) => void;
 	systems?: SystemInfo[];
 	currentSystemId?: string;
 	onSelectSystem: (id: string) => void;
 	galaxyMode?: boolean;
 	onToggleGalaxyMode: () => void;
 	formingId?: string | null;
+	resetCameraTrigger?: number;
 }) {
 	// biome-ignore lint/suspicious/noExplicitAny: OrbitControls typed ref
 	const controlsRef = useRef<any>(null);
@@ -250,6 +323,7 @@ export function PlanetCanvas({
 							key={b.id}
 							onFocus={onFocus}
 							onSelect={onSelect}
+							onViewDetails={onViewDetails}
 							selected={b.id === selectedId}
 						/>
 					))}
@@ -286,8 +360,20 @@ export function PlanetCanvas({
 					bodies={bodies}
 					controlsRef={controlsRef}
 					focusedId={focusedId}
+					resetCameraTrigger={resetCameraTrigger}
 				/>
 			)}
+
+			<ControllerCameraController
+				bodies={bodies}
+				controlsRef={controlsRef}
+				currentSystemId={currentSystemId}
+				onFocus={(id) => onFocus(id)}
+				onSelect={onSelect}
+				onSelectSystem={onSelectSystem}
+				selectedId={selectedId}
+				systems={systems}
+			/>
 
 			<EffectComposer>
 				<Bloom

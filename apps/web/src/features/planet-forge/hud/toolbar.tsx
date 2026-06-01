@@ -9,12 +9,14 @@ import {
 	Activity,
 	Camera,
 	FolderOpen,
+	HelpCircle,
 	Map as MapIcon,
 	Plus,
 	Save,
 	Zap,
 } from "lucide-react";
 import type { SystemInfo, SystemStats } from "../lib/types";
+import { ControllerButtonHint } from "./controller-button-hint";
 
 function Stat({
 	label,
@@ -53,6 +55,7 @@ export function Toolbar({
 	onLoad,
 	onResetCamera,
 	onSupernova,
+	onHelp,
 	systems = [],
 	currentSystemId = "sol",
 	onSelectSystem,
@@ -66,6 +69,7 @@ export function Toolbar({
 	onLoad: () => void;
 	onResetCamera: () => void;
 	onSupernova: () => void;
+	onHelp: () => void;
 	systems?: SystemInfo[];
 	currentSystemId?: string;
 	onSelectSystem: (id: string) => void;
@@ -91,6 +95,7 @@ export function Toolbar({
 		<div
 			className="absolute inset-x-4 top-4 flex h-15 items-stretch gap-3"
 			data-interactive
+			data-tour="toolbar"
 		>
 			<div className="glass flex min-w-[290px] items-center gap-3 px-4">
 				<div className="relative h-9 w-9 shrink-0">
@@ -141,19 +146,25 @@ export function Toolbar({
 			<div className="glass flex items-center gap-2 px-2">
 				<Button
 					className={`gap-2 font-mono tracking-[0.12em] ${galaxyMode ? "border-primary bg-primary/25 text-primary hover:bg-primary/30" : ""}`}
+					data-controller-focusable
+					data-tour="galaxy-mode"
 					onClick={onToggleGalaxyMode}
 					variant="outline"
 				>
-					<MapIcon className="size-4" />{" "}
+					<MapIcon className="size-4" />
 					{galaxyMode ? "LOCAL PLANETS" : "GALAXY VIEW"}
+					<ControllerButtonHint action="galaxyToggle" className="ml-0.5" />
 				</Button>
 
 				<Button
 					className="gap-2 font-mono tracking-[0.12em]"
+					data-controller-focusable
+					data-tour="forge-button"
 					disabled={galaxyMode}
 					onClick={onCreate}
 				>
 					<Plus className="size-4" /> FORGE PLANET
+					<ControllerButtonHint action="r1" className="ml-0.5" />
 				</Button>
 
 				<Button
@@ -171,6 +182,7 @@ export function Toolbar({
 					variant="outline"
 				>
 					<Activity className="size-4" /> TELEMETRY
+					<ControllerButtonHint action="options" className="ml-0.5" />
 				</Button>
 
 				{[
@@ -179,31 +191,63 @@ export function Toolbar({
 						label: "Save System",
 						fn: onSave,
 						disabled: galaxyMode,
+						hint: null,
 					},
-					{ icon: FolderOpen, label: "Load", fn: onLoad, disabled: galaxyMode },
+					{
+						icon: FolderOpen,
+						label: "Load",
+						fn: onLoad,
+						disabled: galaxyMode,
+						hint: null,
+					},
 					{
 						icon: Camera,
 						label: "Reset Camera",
 						fn: onResetCamera,
 						disabled: false,
+						hint: "share" as const,
 					},
-				].map(({ icon: Icon, label, fn, disabled }) => (
-					<Tooltip key={label}>
-						<TooltipTrigger
-							render={
-								<Button
-									disabled={disabled}
-									onClick={fn}
-									size="icon"
-									variant="outline"
-								/>
-							}
-						>
-							<Icon className="size-4" />
-						</TooltipTrigger>
-						<TooltipContent>{label}</TooltipContent>
-					</Tooltip>
+				].map(({ icon: Icon, label, fn, disabled, hint }) => (
+					<div className="relative" key={label}>
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										data-controller-focusable
+										disabled={disabled}
+										onClick={fn}
+										size="icon"
+										variant="outline"
+									/>
+								}
+							>
+								<Icon className="size-4" />
+							</TooltipTrigger>
+							<TooltipContent>{label}</TooltipContent>
+						</Tooltip>
+						{hint && (
+							<span className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+								<ControllerButtonHint action={hint} />
+							</span>
+						)}
+					</div>
 				))}
+
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								data-controller-focusable
+								onClick={onHelp}
+								size="icon"
+								variant="ghost"
+							/>
+						}
+					>
+						<HelpCircle className="size-4" />
+					</TooltipTrigger>
+					<TooltipContent>Replay Tour</TooltipContent>
+				</Tooltip>
 			</div>
 		</div>
 	);

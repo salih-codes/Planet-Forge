@@ -674,4 +674,4 @@ where $T_\text{total} = T_\text{exp} + 1.6$ s is the full visual duration
 
 ---
 
-*Last updated: 2026-05-31 — Planet Forge v0.1.4*
+*Last updated: 2026-06-01 — Planet Forge v0.1.5*

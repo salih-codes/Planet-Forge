@@ -5,6 +5,7 @@ import { Crosshair, Send, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PLANET_TYPES } from "../lib/planet-presets";
 import type { CelestialBody } from "../lib/types";
+import { ControllerButtonHint } from "./controller-button-hint";
 
 const ATMO_COLORS: Record<string, string> = {
 	N2: "#5fa8ff",
@@ -181,6 +182,7 @@ export function InfoPanel({
 		<div
 			className="glass absolute top-[92px] right-4 flex max-h-[calc(100vh-200px)] w-[330px] flex-col overflow-hidden"
 			data-interactive
+			data-tour="info-panel"
 			key={body.id}
 		>
 			<div className="relative overflow-hidden border-b p-4">
@@ -288,6 +290,7 @@ export function InfoPanel({
 				>
 					<Crosshair className="size-4" />
 					STRIKE WITH COMET
+					<ControllerButtonHint action="action1" className="ml-auto" />
 				</Button>
 
 				<div className="mt-2 flex items-center gap-2">
@@ -328,6 +331,9 @@ export function InfoPanel({
 				>
 					<Trash2 className="size-4" />
 					{canDelete ? "DISINTEGRATE BODY" : "CANNOT REMOVE LAST BODY"}
+					{canDelete && (
+						<ControllerButtonHint action="action2" className="ml-auto" />
+					)}
 				</Button>
 			</div>
 		</div>

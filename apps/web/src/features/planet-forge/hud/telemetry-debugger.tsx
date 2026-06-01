@@ -7,6 +7,7 @@ import {
 } from "@planet-forge/ui/components/dialog";
 import { Cpu, Server, Wifi } from "lucide-react";
 import { useSimStore } from "../lib/use-simulation-socket";
+import { ControllerButtonHint } from "./controller-button-hint";
 
 interface TelemetryDebuggerProps {
 	onOpenChange: (open: boolean) => void;
@@ -131,7 +132,10 @@ export function TelemetryDebugger({
 						<Wifi className="size-3.5" />
 						ws://127.0.0.1:8000/stream
 					</div>
-					<Button onClick={() => onOpenChange(false)}>Close View</Button>
+					<div className="flex items-center gap-3">
+						<Button onClick={() => onOpenChange(false)}>Close [ ESC ]</Button>
+						<ControllerButtonHint action="cancel" className="scale-100" />
+					</div>
 				</div>
 			</DialogContent>
 		</Dialog>

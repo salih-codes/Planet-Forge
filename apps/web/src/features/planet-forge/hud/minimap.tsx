@@ -1,7 +1,23 @@
 import { useEffect, useRef } from "react";
 import { PLANET_TYPES } from "../lib/planet-presets";
 import type { CelestialBody } from "../lib/types";
+import { useGamepadStore } from "../lib/use-gamepad";
 import { useSimStore } from "../lib/use-simulation-socket";
+
+function ControllerDpadHint() {
+	const connected = useGamepadStore((s) => s.connected);
+	if (!connected) {
+		return null;
+	}
+	return (
+		<div className="mt-2 flex items-center justify-center gap-1 text-[9px] text-muted-foreground/60 uppercase tracking-widest">
+			<span>◀▶</span>
+			<span>Cycle Planets</span>
+			<span>▲▼</span>
+			<span>Zoom</span>
+		</div>
+	);
+}
 
 export function Minimap({
 	bodies,
@@ -75,12 +91,14 @@ export function Minimap({
 		<div
 			className="glass absolute bottom-4 left-4 w-[200px] p-3"
 			data-interactive
+			data-tour="minimap"
 		>
 			<div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-[0.28em]">
 				<span>Orbital Scan</span>
 				<span className="text-primary">◉ LIVE</span>
 			</div>
 			<canvas className="block h-44 w-44" ref={ref} />
+			<ControllerDpadHint />
 		</div>
 	);
 }
